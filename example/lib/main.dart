@@ -34,6 +34,7 @@ class _MyAppState extends State<MyApp> {
         ],
         theme: ThemeData(
             primarySwatch: Colors.indigo,
+            primaryColor: Colors.indigo,
             accentColor: Colors.pinkAccent
         ),
         home: PickerPage()
@@ -57,12 +58,13 @@ class _PickerPageState extends State<PickerPage> {
   }
 
   void _showMonthPicker() {
-    FlutterDatepickers.showMonthPicker(
+    FlutterDatepickers.showPicker(
       context: context,
-      firstDate: DateTime(DateTime.now().year - 1, 5),
-      lastDate: DateTime(DateTime.now().year + 1, 9),
+        firstDate: DateTime(DateTime.now().year - 50, 5),
+        lastDate: DateTime(DateTime.now().year + 4, 9),
       initialDate: selectedMonthDate ?? DateTime.now(),
-      locale: Locale("es"),
+      locale: Locale("pl"),
+      type: FlutterDatePickersType.MONTH
     ).then((date) {
       if (date != null) {
         setState(() => selectedMonthDate = date);
@@ -71,12 +73,18 @@ class _PickerPageState extends State<PickerPage> {
   }
 
   void _showYearPicker() {
-    FlutterDatepickers.showYearPicker(
+    FlutterDatepickers.showPicker(
       context: context,
-      firstDate: DateTime(DateTime.now().year - 5, 5),
-      lastDate: DateTime(DateTime.now().year + 5, 9),
+      firstDate: DateTime(DateTime.now().year - 50, 5),
+      lastDate: DateTime(DateTime.now().year + 4, 9),
       initialDate: selectedYearDate ?? DateTime.now(),
-      locale: Locale("es"),
+      locale: Locale("pl"),
+      type: FlutterDatePickersType.YEAR,
+      // selectedButtonColor: Colors.green,
+      // selectedTextColor: Colors.teal,
+      // nowTextColor: Colors.yellow,
+      // backgroundColor: Colors.tealAccent,
+      // headerTextColor: Colors.white
     ).then((date) {
       if (date != null) {
         setState(() => selectedYearDate = date);
@@ -109,6 +117,9 @@ class _PickerPageState extends State<PickerPage> {
                   Text('($selectedMonthDate)', style: TextStyle(color: Colors.grey)),
                 SizedBox(height: 10),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    primary: Theme.of(context).accentColor
+                  ),
                   onPressed: _showMonthPicker,
                   child: Text('Open month picker'),
                 )
@@ -118,11 +129,14 @@ class _PickerPageState extends State<PickerPage> {
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(_dateString(selectedYearDate), style: TextStyle(fontSize: 20)),
+                Text(_dateString(selectedYearDate, false), style: TextStyle(fontSize: 20)),
                 if (selectedYearDate != null)
                   Text('($selectedYearDate)', style: TextStyle(color: Colors.grey)),
                 SizedBox(height: 10),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                      primary: Theme.of(context).accentColor
+                  ),
                   onPressed: _showYearPicker,
                   child: Text('Open year picker'),
                 )
