@@ -39,7 +39,7 @@ class FlutterDatepickers {
               lastDate: lastDate,
               locale: locale,
               localizations: localizations,
-              type: SelectorType.MONTH,
+              type: FlutterDatePickersType.MONTH,
             );
           case FlutterDatePickersType.YEAR:
             return PickerDialog(
@@ -48,7 +48,7 @@ class FlutterDatepickers {
               lastDate: lastDate,
               locale: locale,
               localizations: localizations,
-              type: SelectorType.YEAR,
+              type: FlutterDatePickersType.YEAR,
               backgroundColor: backgroundColor,
               headerTextColor: headerTextColor,
               selectedTextColor: selectedTextColor,
@@ -71,7 +71,7 @@ class PickerDialog extends StatefulWidget {
   final Color? selectedTextColor;
   final Color? selectedButtonColor;
   final Color? nowTextColor;
-  final SelectorType type;
+  final FlutterDatePickersType type;
 
   const PickerDialog({
     Key? key,
@@ -85,7 +85,7 @@ class PickerDialog extends StatefulWidget {
     this.selectedTextColor,
     this.selectedButtonColor,
     this.nowTextColor,
-    this.type = SelectorType.MONTH
+    this.type = FlutterDatePickersType.MONTH
   }) : super(key: key);
 
   @override
@@ -102,7 +102,7 @@ class PickerDialogState extends State<PickerDialog> {
   Selector? _selector;
   DateTime? selectedDate, _firstDate, _lastDate;
 
-  bool get _isMonth => widget.type == SelectorType.MONTH;
+  bool get _isMonth => widget.type == FlutterDatePickersType.MONTH;
 
   @override
   void initState() {
@@ -113,19 +113,19 @@ class PickerDialogState extends State<PickerDialog> {
 
     selectedDate = DateTime(widget.initialDate!.year, widget.initialDate!.month);
 
-    widget.type == SelectorType.YEAR
+    widget.type == FlutterDatePickersType.YEAR
         ?  setYearSelector()
         : _setMonthSelector();
 
     super.initState();
   }
 
-  void _setMonthSelector([DateTime? _openDate]) {
+  void _setMonthSelector([DateTime? _selectedDate]) {
     setState(() {
       _selector = new Selector(
         key: _monthSelectorState,
-        openDate: _openDate ?? selectedDate!,
-        selectedDate: selectedDate!,
+        // openDate: _openDate ?? selectedDate!,
+        selectedDate: _selectedDate ?? selectedDate!,
         upDownPageLimitPublishSubject: _upDownPageLimitPublishSubject,
         upDownButtonEnableStatePublishSubject: _upDownButtonEnableStatePublishSubject,
         firstDate: _firstDate,
@@ -217,7 +217,7 @@ class PickerDialogState extends State<PickerDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                _selector!.type == SelectorType.MONTH
+                _selector!.type == FlutterDatePickersType.MONTH
                     ? GestureDetector(
                   onTap: _onSelectYear,
                   child: new StreamBuilder<UpDownPageLimit>(
@@ -314,11 +314,10 @@ class PickerDialogState extends State<PickerDialog> {
   void _onSelectYear() => setState(() => _selector = new Selector(
     key: _yearSelectorState,
     selectedDate: selectedDate!,
-    openDate: selectedDate!,
     firstDate: _firstDate,
     lastDate: _lastDate,
     onSelected: _onYearSelected,
-    type: SelectorType.YEAR,
+    type: FlutterDatePickersType.YEAR,
     upDownPageLimitPublishSubject: _upDownPageLimitPublishSubject,
     upDownButtonEnableStatePublishSubject: _upDownButtonEnableStatePublishSubject,
   ));
@@ -328,7 +327,6 @@ class PickerDialogState extends State<PickerDialog> {
       _selector = new Selector(
         key: _yearSelectorState,
         selectedDate: selectedDate!,
-        openDate: selectedDate!,
         firstDate: _firstDate,
         lastDate: _lastDate,
         onSelected: _onYearSelected,
@@ -338,7 +336,7 @@ class PickerDialogState extends State<PickerDialog> {
         selectedButtonColor: widget.selectedButtonColor,
         selectedTextColor: widget.selectedTextColor,
         nowTextColor: widget.nowTextColor,
-        type: SelectorType.YEAR,
+        type: FlutterDatePickersType.YEAR,
       );
     });
   }

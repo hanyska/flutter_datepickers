@@ -60,8 +60,8 @@ class _PickerPageState extends State<PickerPage> {
   void _showMonthPicker() {
     FlutterDatepickers.showPicker(
       context: context,
-        firstDate: DateTime(DateTime.now().year - 50, 5),
-        lastDate: DateTime(DateTime.now().year + 4, 9),
+      firstDate: DateTime(DateTime.now().year - 50, 5),
+      // lastDate: DateTime(DateTime.now().year + 4, 9),
       initialDate: selectedMonthDate ?? DateTime.now(),
       locale: Locale("pl"),
       type: FlutterDatePickersType.MONTH
@@ -76,7 +76,7 @@ class _PickerPageState extends State<PickerPage> {
     FlutterDatepickers.showPicker(
       context: context,
       firstDate: DateTime(DateTime.now().year - 50, 5),
-      lastDate: DateTime(DateTime.now().year + 4, 9),
+      // lastDate: DateTime(DateTime.now().year + 4, 9),
       initialDate: selectedYearDate ?? DateTime.now(),
       locale: Locale("pl"),
       type: FlutterDatePickersType.YEAR,

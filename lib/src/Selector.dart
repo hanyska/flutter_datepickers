@@ -1,18 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_datepickers/flutter_datepickers.dart';
 import 'package:flutter_datepickers/src/common.dart';
 import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
 
 import 'locale_utils.dart';
 
-enum SelectorType {
-  MONTH,
-  YEAR
-}
-
 class Selector extends StatefulWidget {
   final ValueChanged<DateTime> onSelected;
-  final DateTime? openDate, selectedDate, firstDate, lastDate;
+  final DateTime selectedDate;
+  final DateTime? firstDate, lastDate;
   final PublishSubject<UpDownPageLimit> upDownPageLimitPublishSubject;
   final PublishSubject<UpDownButtonEnableState> upDownButtonEnableStatePublishSubject;
   final Locale? locale;
@@ -20,12 +17,11 @@ class Selector extends StatefulWidget {
   final Color? selectedTextColor;
   final Color? selectedButtonColor;
   final Color? nowTextColor;
-  final SelectorType type;
+  final FlutterDatePickersType type;
 
   const Selector({
     Key? key,
-    required this.openDate,
-    required DateTime this.selectedDate,
+    required this.selectedDate,
     required this.onSelected,
     required this.upDownPageLimitPublishSubject,
     required this.upDownButtonEnableStatePublishSubject,
@@ -36,7 +32,7 @@ class Selector extends StatefulWidget {
     this.selectedTextColor,
     this.selectedButtonColor,
     this.nowTextColor,
-    this.type = SelectorType.MONTH
+    this.type = FlutterDatePickersType.MONTH
   }) : super(key: key);
   @override
   State<StatefulWidget> createState() => SelectorState();
@@ -45,159 +41,20 @@ class Selector extends StatefulWidget {
 class SelectorState extends State<Selector> {
   PageController? _pageController;
 
-  bool get _isMonth => widget.type == SelectorType.MONTH;
-
-  @override
-  Widget build(BuildContext context) {
-    return PageView.builder(
-      controller: _pageController,
-      scrollDirection: Axis.vertical,
-      physics: const AlwaysScrollableScrollPhysics(),
-      onPageChanged: _onPageChange,
-      itemCount: _getPageCount(),
-      itemBuilder: _yearGridBuilder,
-    );
-  }
-
-  Widget _yearGridBuilder(final BuildContext context, final int page) {
-    return GridView.count(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: EdgeInsets.all(8.0),
-      crossAxisCount: 4,
-      children: List<Widget>
-        .generate(12, (int index) {
-          return _isMonth
-          ? _getMonthButton(
-              DateTime(widget.firstDate != null ? widget.firstDate!.year + page : page, index + 1),
-              getLocale(context, selectedLocale: widget.locale)
-            )
-          : _getYearButton(
-              DateTime(widget.firstDate == null ? 0 : widget.firstDate!.year + page * 12 + index),
-              getLocale(context, selectedLocale: widget.locale)
-          );
-        }).toList(growable: false),
-    );
-  }
-
-  Widget _getMonthButton(final DateTime date, final String locale) {
-    final bool isEnabled = _isEnabled(date);
-    return FlatButton(
-      onPressed: isEnabled
-          ? () => widget.onSelected(DateTime(date.year, date.month))
-          : null,
-      color: date.month == widget.selectedDate!.month &&
-          date.year == widget.selectedDate!.year
-          ? Theme.of(context).accentColor
-          : null,
-      textColor: date.month == widget.selectedDate!.month &&
-          date.year == widget.selectedDate!.year
-          ? Theme.of(context).accentTextTheme.button!.color
-          : date.month == DateTime.now().month &&
-          date.year == DateTime.now().year
-          ? Theme.of(context).accentColor
-          : null,
-      child: Text(DateFormat.MMM(locale).format(date)),
-    );
-  }
-
-  Widget _getYearButton(final DateTime date, final String locale) {
-    final bool isEnabled = _isEnabled(date, isYealy: true);
-
-    return TextButton(
-      onPressed: isEnabled
-          ? () => widget.onSelected(date)
-          : null,
-      style: TextButton.styleFrom(
-          shape: CircleBorder(),
-          backgroundColor: date.year == widget.selectedDate!.year
-              ? widget.selectedButtonColor ?? Theme.of(context).accentColor
-              : null,
-          primary: date.year == widget.selectedDate!.year
-              ? widget.selectedTextColor ?? Theme.of(context).accentTextTheme.button!.color
-              : date.year == DateTime.now().year
-              ? widget.nowTextColor ?? Theme.of(context).accentColor
-              : null
-      ),
-      child: Text(DateFormat.y(locale).format(date),
-      ),
-    );
-  }
-
-  void _onPageChange(final int page) {
-    if (_isMonth) {
-      widget.upDownPageLimitPublishSubject.add(
-        new UpDownPageLimit(
-          widget.firstDate != null ? widget.firstDate!.year + page : page,
-          0,
-        ),
-      );
-      widget.upDownButtonEnableStatePublishSubject.add(
-        new UpDownButtonEnableState(page > 0, page < _getPageCount() - 1),
-      );
-    } else {
-      widget.upDownPageLimitPublishSubject.add(new UpDownPageLimit(
-          widget.firstDate == null
-              ? page * 12
-              : widget.firstDate!.year + page * 12,
-          widget.firstDate == null
-              ? page * 12 + 11
-              : widget.firstDate!.year + page * 12 + 11));
-      if (page == 0 || page == _getPageCount() - 1) {
-        widget.upDownButtonEnableStatePublishSubject.add(
-          new UpDownButtonEnableState(page > 0, page < _getPageCount() - 1),
-        );
-      }
-    }
-  }
-
-  int _getPageCount() {
-    if (_isMonth) {
-      if (widget.firstDate != null && widget.lastDate != null) {
-        return widget.lastDate!.year - widget.firstDate!.year + 1;
-      } else if (widget.firstDate != null && widget.lastDate == null) {
-        return 9999 - widget.firstDate!.year;
-      } else if (widget.firstDate == null && widget.lastDate != null) {
-        return widget.lastDate!.year + 1;
-      } else
-        return 9999;
-    } else {
-      if (widget.firstDate != null && widget.lastDate != null) {
-        if (widget.lastDate!.year - widget.firstDate!.year <= 12)
-          return 1;
-        else
-          return ((widget.lastDate!.year - widget.firstDate!.year + 1) / 12).ceil();
-      } else if (widget.firstDate != null && widget.lastDate == null) {
-        return (_getItemCount / 12).ceil();
-      } else if (widget.firstDate == null && widget.lastDate != null) {
-        return (_getItemCount / 12).ceil();
-      } else
-        return (9999 / 12).ceil();
-    }
-  }
-
-  int get _getItemCount{
-    if (widget.firstDate != null && widget.lastDate != null) {
-      return widget.lastDate!.year - widget.firstDate!.year + 1;
-    } else if (widget.firstDate != null && widget.lastDate == null) {
-      return (9999 - widget.firstDate!.year);
-    } else if (widget.firstDate == null && widget.lastDate != null) {
-      return widget.lastDate!.year;
-    } else
-      return 9999;
-  }
+  bool get _isMonth => widget.type == FlutterDatePickersType.MONTH;
 
   @override
   void initState() {
     if (_isMonth) {
       _pageController = new PageController(
-        initialPage: widget.firstDate == null
-          ? widget.openDate!.year
-          : widget.openDate!.year - widget.firstDate!.year);
+          initialPage: widget.firstDate == null
+              ? widget.selectedDate.year
+              : widget.selectedDate.year - widget.firstDate!.year);
     } else {
       _pageController = new PageController(
-        initialPage: widget.firstDate == null
-          ? (widget.selectedDate!.year / 12).floor()
-          : ((widget.selectedDate!.year - widget.firstDate!.year) / 12).floor());
+          initialPage: widget.firstDate == null
+              ? (widget.selectedDate.year / 12).floor()
+              : ((widget.selectedDate.year - widget.firstDate!.year) / 12).floor());
     }
 
 
@@ -238,6 +95,103 @@ class SelectorState extends State<Selector> {
   void dispose() {
     _pageController!.dispose();
     super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return PageView.builder(
+      controller: _pageController,
+      scrollDirection: Axis.vertical,
+      physics: const AlwaysScrollableScrollPhysics(),
+      onPageChanged: _onPageChange,
+      itemCount: _getPageCount(),
+      itemBuilder: _yearGridBuilder,
+    );
+  }
+
+  Widget _yearGridBuilder(final BuildContext context, final int page) {
+    return GridView.count(
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.all(8.0),
+      crossAxisCount: 4,
+      children: List<Widget>
+        .generate(12, (int index) => _getButton(
+          _isMonth
+            ? DateTime(widget.firstDate != null ? widget.firstDate!.year + page : page, index + 1)
+            : DateTime(widget.firstDate != null ? widget.firstDate!.year + page * 12 + index : 0),
+          getLocale(context, selectedLocale: widget.locale)
+        )).toList(growable: false),
+    );
+  }
+
+  Widget _getButton(final DateTime date, final String locale) {
+    final bool isEnabled = _isEnabled(date, isYealy: !_isMonth);
+    bool _isSelected = _isMonth
+      ? date.month == widget.selectedDate.month && date.year == widget.selectedDate.year
+      : date.year == widget.selectedDate.year;
+
+    return TextButton(
+      onPressed: isEnabled
+          ? () => widget.onSelected(date)
+          : null,
+      style: TextButton.styleFrom(
+        shape: CircleBorder(),
+        backgroundColor: _isSelected
+          ? widget.selectedButtonColor ?? Theme.of(context).accentColor
+          : null,
+        primary: _isSelected
+          ? widget.selectedTextColor ?? Theme.of(context).accentTextTheme.button!.color
+          : date.year == DateTime.now().year && (_isMonth ? date.month == DateTime.now().month : true)
+            ? widget.nowTextColor ?? Theme.of(context).accentColor
+            : null,
+      ),
+      child: Text(DateFormat(_isMonth ? 'MMM' : 'y', locale).format(date)),
+    );
+  }
+
+  void _onPageChange(final int page) {
+    int _page = _isMonth ? page : (page * 12);
+    int _upLimit = widget.firstDate != null
+      ? widget.firstDate!.year + _page
+      : _page;
+
+    int _downLimit = _isMonth
+      ? 0
+      : widget.firstDate != null
+        ? widget.firstDate!.year + page * 12 + 11
+        : page * 12 + 11;
+
+    widget.upDownPageLimitPublishSubject.add(UpDownPageLimit(_upLimit, _downLimit));
+    widget.upDownButtonEnableStatePublishSubject.add(UpDownButtonEnableState(page > 0, page < _getPageCount() - 1));
+  }
+
+  int _getPageCount() {
+    if (_isMonth) {
+      return _getItemCount;
+    } else {
+      if (widget.firstDate != null && widget.lastDate != null) {
+        if (widget.lastDate!.year - widget.firstDate!.year <= 12)
+          return 1;
+        else
+          return ((widget.lastDate!.year - widget.firstDate!.year + 1) / 12).ceil();
+      } else if (widget.firstDate != null && widget.lastDate == null) {
+        return (_getItemCount / 12).ceil();
+      } else if (widget.firstDate == null && widget.lastDate != null) {
+        return (_getItemCount / 12).ceil();
+      } else
+        return (9999 / 12).ceil();
+    }
+  }
+
+  int get _getItemCount{
+    if (widget.firstDate != null && widget.lastDate != null) {
+      return widget.lastDate!.year - widget.firstDate!.year + 1;
+    } else if (widget.firstDate != null && widget.lastDate == null) {
+      return (9999 - widget.firstDate!.year);
+    } else if (widget.firstDate == null && widget.lastDate != null) {
+      return widget.lastDate!.year;
+    } else
+      return 9999;
   }
 
   bool _isEnabled(DateTime date, {bool isYealy = false}) {
