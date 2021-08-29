@@ -1,15 +1,24 @@
 # flutter_datepickers
 
-A new flutter plugin project.
+Month and year dialog pickers based on [month_picker_dialog](https://pub.dev/packages/month_picker_dialog)
 
-## Getting Started
+## About
 
-This project is a starting point for a Flutter
-[plug-in package](https://flutter.dev/developing-packages/),
-a specialized package that includes platform-specific implementation code for
-Android and/or iOS.
+This project is extension to month picker dialog.
 
-For help getting started with Flutter, view our
-[online documentation](https://flutter.dev/docs), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Added
+
+✅ month picker dialog,
+
+✅ year picker dialog
+
+❌ day picker dialog (in the future).
+
+## Screens
+
+![Main page](screenshots/main_page.png )
+![Month picker vertically](screenshots/month_picker.png)
+![Month picker horizontally](screenshots/month_picker2.png)
+![Year picker vertically](screenshots/year_picker.png)
+![Year picker horizontally](screenshots/year_picker2.png)
 
