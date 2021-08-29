@@ -61,7 +61,7 @@ class _PickerPageState extends State<PickerPage> {
     FlutterDatepickers.showPicker(
       context: context,
       firstDate: DateTime(DateTime.now().year - 50, 5),
-      // lastDate: DateTime(DateTime.now().year + 4, 9),
+      lastDate: DateTime(DateTime.now().year + 4, 9),
       initialDate: selectedMonthDate ?? DateTime.now(),
       locale: Locale("pl"),
       type: FlutterDatePickersType.MONTH
@@ -76,15 +76,23 @@ class _PickerPageState extends State<PickerPage> {
     FlutterDatepickers.showPicker(
       context: context,
       firstDate: DateTime(DateTime.now().year - 50, 5),
-      // lastDate: DateTime(DateTime.now().year + 4, 9),
+      lastDate: DateTime(DateTime.now().year + 4, 9),
       initialDate: selectedYearDate ?? DateTime.now(),
       locale: Locale("pl"),
       type: FlutterDatePickersType.YEAR,
-      // selectedButtonColor: Colors.green,
-      // selectedTextColor: Colors.teal,
-      // nowTextColor: Colors.yellow,
-      // backgroundColor: Colors.tealAccent,
-      // headerTextColor: Colors.white
+      theme: Theme.of(context).copyWith(
+        primaryColor: Colors.teal,
+        accentColor: Colors.teal,
+        textButtonTheme: TextButtonThemeData(
+          style: TextButton.styleFrom(
+            primary: Colors.black,
+          ),
+        ),
+        primaryTextTheme: Theme.of(context).primaryTextTheme.copyWith(
+          subtitle1: Theme.of(context).primaryTextTheme.subtitle1!.copyWith(color: Colors.black),
+          headline5: Theme.of(context).primaryTextTheme.headline5!.copyWith(color: Colors.black)
+        ),
+      )
     ).then((date) {
       if (date != null) {
         setState(() => selectedYearDate = date);

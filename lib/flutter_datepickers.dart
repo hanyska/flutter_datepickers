@@ -1,10 +1,10 @@
 import 'dart:async';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_datepickers/src/Selector.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_datepickers/src/common.dart';
-import 'package:flutter_datepickers/src/locale_utils.dart';
 import 'package:intl/intl.dart';
 import 'package:rxdart/rxdart.dart';
 
@@ -18,11 +18,7 @@ class FlutterDatepickers {
     DateTime? lastDate,
     Locale? locale,
     FlutterDatePickersType type = FlutterDatePickersType.MONTH,
-    Color? backgroundColor,
-    Color? headerTextColor,
-    Color? selectedTextColor,
-    Color? selectedButtonColor,
-    Color? nowTextColor,
+    ThemeData? theme,
   }) async {
     final localizations = locale == null
         ? MaterialLocalizations.of(context)
@@ -30,33 +26,15 @@ class FlutterDatepickers {
 
     return await showDialog<DateTime>(
       context: context,
-      builder: (context) {
-        switch(type) {
-          case FlutterDatePickersType.MONTH:
-            return PickerDialog(
-              initialDate: initialDate,
-              firstDate: firstDate,
-              lastDate: lastDate,
-              locale: locale,
-              localizations: localizations,
-              type: FlutterDatePickersType.MONTH,
-            );
-          case FlutterDatePickersType.YEAR:
-            return PickerDialog(
-              initialDate: initialDate,
-              firstDate: firstDate,
-              lastDate: lastDate,
-              locale: locale,
-              localizations: localizations,
-              type: FlutterDatePickersType.YEAR,
-              backgroundColor: backgroundColor,
-              headerTextColor: headerTextColor,
-              selectedTextColor: selectedTextColor,
-              selectedButtonColor: selectedButtonColor,
-              nowTextColor: nowTextColor,
-            );
-        }
-      },
+      builder: (context) => PickerDialog(
+        initialDate: initialDate,
+        firstDate: firstDate,
+        lastDate: lastDate,
+        locale: locale,
+        localizations: localizations,
+        type: type,
+        theme: theme
+      )
     );
   }
 }
@@ -72,6 +50,7 @@ class PickerDialog extends StatefulWidget {
   final Color? selectedButtonColor;
   final Color? nowTextColor;
   final FlutterDatePickersType type;
+  final ThemeData? theme;
 
   const PickerDialog({
     Key? key,
@@ -85,7 +64,8 @@ class PickerDialog extends StatefulWidget {
     this.selectedTextColor,
     this.selectedButtonColor,
     this.nowTextColor,
-    this.type = FlutterDatePickersType.MONTH
+    this.type = FlutterDatePickersType.MONTH,
+    this.theme,
   }) : super(key: key);
 
   @override
@@ -99,7 +79,7 @@ class PickerDialogState extends State<PickerDialog> {
   PublishSubject<UpDownPageLimit> _upDownPageLimitPublishSubject = new PublishSubject();
   PublishSubject<UpDownButtonEnableState> _upDownButtonEnableStatePublishSubject = new PublishSubject();
 
-  Selector? _selector;
+  late Selector _selector;
   DateTime? selectedDate, _firstDate, _lastDate;
 
   bool get _isMonth => widget.type == FlutterDatePickersType.MONTH;
@@ -113,27 +93,9 @@ class PickerDialogState extends State<PickerDialog> {
 
     selectedDate = DateTime(widget.initialDate!.year, widget.initialDate!.month);
 
-    widget.type == FlutterDatePickersType.YEAR
-        ?  setYearSelector()
-        : _setMonthSelector();
+    _setSelector(widget.type);
 
     super.initState();
-  }
-
-  void _setMonthSelector([DateTime? _selectedDate]) {
-    setState(() {
-      _selector = new Selector(
-        key: _monthSelectorState,
-        // openDate: _openDate ?? selectedDate!,
-        selectedDate: _selectedDate ?? selectedDate!,
-        upDownPageLimitPublishSubject: _upDownPageLimitPublishSubject,
-        upDownButtonEnableStatePublishSubject: _upDownButtonEnableStatePublishSubject,
-        firstDate: _firstDate,
-        lastDate: _lastDate,
-        onSelected: _onMonthSelected,
-        locale: widget.locale,
-      );
-    });
   }
 
   void dispose() {
@@ -144,19 +106,19 @@ class PickerDialogState extends State<PickerDialog> {
 
   @override
   Widget build(BuildContext context) {
-    var theme = Theme.of(context);
-    var locale = getLocale(context, selectedLocale: widget.locale);
-    var header = buildHeader(theme, locale);
-    var pager = buildPager(theme, locale);
-    var content = Material(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [pager, buildButtonBar(context)],
-      ),
-      color: theme.dialogBackgroundColor,
+    ThemeData theme = widget.theme ?? Theme.of(context);
+
+    Widget header = buildHeader(theme);
+    Widget content = Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        buildPager(theme),
+        buildButtonBar(context)
+      ],
     );
+
     return Theme(
-      data: Theme.of(context).copyWith(dialogBackgroundColor: Colors.transparent),
+      data: theme,
       child: Dialog(
         child: Column(
           mainAxisSize: MainAxisSize.min,
@@ -164,14 +126,17 @@ class PickerDialogState extends State<PickerDialog> {
             Builder(builder: (context) {
               if (MediaQuery.of(context).orientation == Orientation.portrait) {
                 return IntrinsicWidth(
-                  child: Column(children: [header, content]),
+                  child: Column(
+                    children: [header, content]
+                  ),
                 );
               }
               return IntrinsicHeight(
                 child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [header, content]),
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [header, content]
+                ),
               );
             }),
           ],
@@ -180,9 +145,7 @@ class PickerDialogState extends State<PickerDialog> {
     );
   }
 
-  Widget buildButtonBar(
-      BuildContext context,
-      ) {
+  Widget buildButtonBar(BuildContext context) {
     return ButtonBar(
       children: <Widget>[
         TextButton(
@@ -197,10 +160,9 @@ class PickerDialogState extends State<PickerDialog> {
     );
   }
 
-  Widget buildHeader(ThemeData theme, String locale) {
-    String _selectedDate = _isMonth
-        ? DateFormat.yMMM(locale).format(selectedDate!)
-        : DateFormat.y(locale).format(selectedDate!);
+  Widget buildHeader(ThemeData theme) {
+    String locale = widget.locale?.languageCode ?? ui.window.locale.languageCode;
+    String _selectedDate = DateFormat(_isMonth ? 'yMMM' : 'y', locale).format(selectedDate!);
 
     return Material(
       color: theme.primaryColor,
@@ -217,68 +179,60 @@ class PickerDialogState extends State<PickerDialog> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                _selector!.type == FlutterDatePickersType.MONTH
-                    ? GestureDetector(
-                  onTap: _onSelectYear,
-                  child: new StreamBuilder<UpDownPageLimit>(
+                new StreamBuilder<UpDownPageLimit>(
                     stream: _upDownPageLimitPublishSubject,
                     initialData: const UpDownPageLimit(0, 0),
-                    builder: (_, snapshot) => Text(
-                      '${DateFormat.y(locale).format(DateTime(snapshot.data!.upLimit))}',
-                      style: theme.primaryTextTheme.headline5,
-                    ),
+                    builder: (_, snapshot) {
+                      return _selector.type == FlutterDatePickersType.YEAR
+                        ? Text.rich(
+                            TextSpan(
+                              style: theme.primaryTextTheme.headline5,
+                              children: [
+                                TextSpan(text: '${DateFormat.y(locale).format(DateTime(snapshot.data!.upLimit))}'),
+                                TextSpan(text: '-'),
+                                TextSpan(text: '${DateFormat.y(locale).format(DateTime(snapshot.data!.downLimit))}'),
+                              ]
+                            )
+                          )
+                        : GestureDetector(
+                            onTap: () => _setSelector(FlutterDatePickersType.YEAR),
+                            child: Text(
+                              '${DateFormat.y(locale).format(DateTime(snapshot.data!.upLimit))}',
+                              style: theme.primaryTextTheme.headline5,
+                            ),
+                          );
+                    },
                   ),
-                )
-                    : new StreamBuilder<UpDownPageLimit>(
-                  stream: _upDownPageLimitPublishSubject,
-                  initialData: const UpDownPageLimit(0, 0),
-                  builder: (_, snapshot) => Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                        '${DateFormat.y(locale).format(DateTime(snapshot.data!.upLimit))}',
-                        style: theme.primaryTextTheme.headline5,
-                      ),
-                      Text(
-                        '-',
-                        style: theme.primaryTextTheme.headline5,
-                      ),
-                      Text(
-                        '${DateFormat.y(locale).format(DateTime(snapshot.data!.downLimit))}',
-                        style: theme.primaryTextTheme.headline5,
-                      ),
-                    ],
-                  ),
-                ),
                 new StreamBuilder<UpDownButtonEnableState>(
                   stream: _upDownButtonEnableStatePublishSubject,
                   initialData: const UpDownButtonEnableState(true, true),
-                  builder: (_, snapshot) => Row(
-                    children: <Widget>[
-                      IconButton(
-                        icon: Icon(
-                          Icons.keyboard_arrow_up,
-                          color: snapshot.data!.upState
-                              ? theme.primaryIconTheme.color
-                              : theme.primaryIconTheme.color!.withOpacity(0.5),
+                  builder: (_, snapshot) => Text.rich(
+                    TextSpan(
+                      children: [
+                        WidgetSpan(
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.keyboard_arrow_up,
+                              color: snapshot.data!.upState
+                                ? theme.primaryTextTheme.headline5!.color
+                                : theme.primaryTextTheme.headline5!.color!.withOpacity(0.5),
+                            ),
+                            onPressed: snapshot.data!.upState ? _onUpButtonPressed : null,
+                          ),
                         ),
-                        onPressed: snapshot.data!.upState
-                            ? _onUpButtonPressed
-                            : null,
-                      ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.keyboard_arrow_down,
-                          color: snapshot.data!.downState
-                              ? theme.primaryIconTheme.color
-                              : theme.primaryIconTheme.color!.withOpacity(0.5),
-                        ),
-                        onPressed: snapshot.data!.downState
-                            ? _onDownButtonPressed
-                            : null,
-                      ),
-                    ],
+                        WidgetSpan(
+                          child: IconButton(
+                            icon: Icon(
+                              Icons.keyboard_arrow_down,
+                              color: snapshot.data!.downState
+                                ? theme.primaryTextTheme.headline5!.color
+                                : theme.primaryTextTheme.headline5!.color!.withOpacity(0.5),
+                            ),
+                            onPressed: snapshot.data!.downState ? _onDownButtonPressed : null,
+                          ),
+                        )
+                      ]
+                    )
                   ),
                 ),
               ],
@@ -289,16 +243,17 @@ class PickerDialogState extends State<PickerDialog> {
     );
   }
 
-  Widget buildPager(ThemeData theme, String locale) {
+  Widget buildPager(ThemeData theme) {
     return SizedBox(
       height: 230.0,
       width: 300.0,
       child: Theme(
         data: theme.copyWith(
-          buttonTheme: ButtonThemeData(
-            padding: EdgeInsets.all(2.0),
-            shape: CircleBorder(),
-            minWidth: 4.0,
+          textButtonTheme: TextButtonThemeData(
+            style: ButtonStyle(
+              padding: MaterialStateProperty.all(EdgeInsets.all(2.0)),
+              shape: MaterialStateProperty.all(CircleBorder()),
+            ),
           ),
         ),
         child: new AnimatedSwitcher(
@@ -311,48 +266,33 @@ class PickerDialogState extends State<PickerDialog> {
     );
   }
 
-  void _onSelectYear() => setState(() => _selector = new Selector(
-    key: _yearSelectorState,
-    selectedDate: selectedDate!,
-    firstDate: _firstDate,
-    lastDate: _lastDate,
-    onSelected: _onYearSelected,
-    type: FlutterDatePickersType.YEAR,
-    upDownPageLimitPublishSubject: _upDownPageLimitPublishSubject,
-    upDownButtonEnableStatePublishSubject: _upDownButtonEnableStatePublishSubject,
-  ));
+  void _setSelector(FlutterDatePickersType type) {
+    bool _isMonth = type == FlutterDatePickersType.MONTH;
 
-  void setYearSelector() {
     setState(() {
       _selector = new Selector(
-        key: _yearSelectorState,
+        key: _isMonth ? _monthSelectorState : _yearSelectorState,
         selectedDate: selectedDate!,
         firstDate: _firstDate,
         lastDate: _lastDate,
-        onSelected: _onYearSelected,
+        onSelected: _isMonth ? _onMonthSelected : _onYearSelected,
+        locale: widget.locale,
         upDownPageLimitPublishSubject: _upDownPageLimitPublishSubject,
         upDownButtonEnableStatePublishSubject: _upDownButtonEnableStatePublishSubject,
-        backgroundColor: widget.backgroundColor,
-        selectedButtonColor: widget.selectedButtonColor,
-        selectedTextColor: widget.selectedTextColor,
-        nowTextColor: widget.nowTextColor,
-        type: FlutterDatePickersType.YEAR,
+        type: type,
       );
     });
   }
 
+
   void _onYearSelected(final DateTime date) {
-    if (_isMonth) {
-      _setMonthSelector(DateTime(date.year));
-    } else {
-      setState(() => selectedDate = DateTime(date.year, 1, 1));
-      setYearSelector();
-    }
+    setState(() => selectedDate = DateTime(date.year, 1, 1));
+    _setSelector(widget.type);
   }
 
   void _onMonthSelected(final DateTime date) {
     setState(() => selectedDate = date);
-    _setMonthSelector();
+    _setSelector(FlutterDatePickersType.MONTH);
   }
 
   void _onUpButtonPressed() {
