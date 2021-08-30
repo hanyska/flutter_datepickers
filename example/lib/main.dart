@@ -64,7 +64,7 @@ class _PickerPageState extends State<PickerPage> {
       lastDate: DateTime(DateTime.now().year + 4, 9),
       initialDate: selectedMonthDate ?? DateTime.now(),
       locale: Locale("pl"),
-      type: FlutterDatePickersType.MONTH
+      type: FlutterDatePickersType.MONTH,
     ).then((date) {
       if (date != null) {
         setState(() => selectedMonthDate = date);

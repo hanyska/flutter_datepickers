@@ -146,8 +146,8 @@ class SelectorState extends State<Selector> {
       return true;
     }
 
-    bool _isAfterFirstDate = widget.firstDate != null && DateTime(isYealy ? widget.firstDate!.year : widget.firstDate!.year).compareTo(date) <= 0;
-    bool _isBeforeLastDate = widget.lastDate != null && DateTime(isYealy ? widget.lastDate!.year : widget.lastDate!.year).compareTo(date) >= 0;
+    bool _isAfterFirstDate = widget.firstDate != null && (isYealy ? DateTime(widget.firstDate!.year) : DateTime(widget.firstDate!.year, widget.firstDate!.month)).compareTo(date) <= 0;
+    bool _isBeforeLastDate = widget.lastDate != null && (isYealy ? DateTime(widget.lastDate!.year) : DateTime(widget.lastDate!.year, widget.lastDate!.month)).compareTo(date) >= 0;
 
     if (_isAfterFirstDate && _isBeforeLastDate)
       return true;
